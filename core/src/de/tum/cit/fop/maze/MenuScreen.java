@@ -14,8 +14,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 /**
- * The MenuScreen class is responsible for displaying the main menu of the game.
- * It extends the LibGDX Screen class and sets up the UI components for the menu.
+ * MenuScreen implemented with Scene2D UI but using the Pathcoders menu items.
  */
 public class MenuScreen implements Screen {
 
@@ -28,39 +27,51 @@ public class MenuScreen implements Screen {
      */
     public MenuScreen(MazeRunnerGame game) {
         var camera = new OrthographicCamera();
-        camera.zoom = 1.5f; // Set camera zoom for a closer view
+        camera.zoom = 1.5f;
 
-        Viewport viewport = new ScreenViewport(camera); // Create a viewport with the camera
-        stage = new Stage(viewport, game.getSpriteBatch()); // Create a stage for UI elements
+        Viewport viewport = new ScreenViewport(camera);
+        stage = new Stage(viewport, game.getSpriteBatch());
 
-        Table table = new Table(); // Create a table for layout
-        table.setFillParent(true); // Make the table fill the stage
-        stage.addActor(table); // Add the table to the stage
+        Table table = new Table();
+        table.setFillParent(true);
+        stage.addActor(table);
 
-        // Add a label as a title
-        table.add(new Label("Hello World from the Menu!", game.getSkin(), "title")).padBottom(80).row();
+        // Title label
+        Label title = new Label("AWESOME GAME", game.getSkin(), "title");
+        table.add(title).padBottom(80).row();
 
-        // Create and add a button to go to the game screen
-        TextButton goToGameButton = new TextButton("Go To Game", game.getSkin());
-        table.add(goToGameButton).width(300).row();
-        goToGameButton.addListener(new ChangeListener() {
-            @Override
-            public void changed(ChangeEvent event, Actor actor) {
-                game.goToGame(); // Change to the game screen when button is pressed
-            }
-        });
+        String[] menuItems = {"Start", "Endless", "Settings", "Exit"};
+
+        for(String item : menuItems) {
+            TextButton button = new TextButton(item, game.getSkin());
+            table.add(button).width(320).padBottom(20).row();
+
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    switch(item) {
+                        case "Start" -> game.goToGame();
+                        case "Endless" -> game.goToEndlessGame();
+                        case "Settings" -> game.goToSettings();
+                        case "Exit" -> Gdx.app.exit();
+                    }
+                }
+            });
+        }
     }
 
     @Override
     public void render(float delta) {
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT); // Clear the screen
-        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f)); // Update the stage
-        stage.draw(); // Draw the stage
+        Gdx.gl.glClearColor(0, 0, 0, 1);
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        stage.act(Math.min(Gdx.graphics.getDeltaTime(), 1 / 30f));
+        stage.draw();
     }
 
     @Override
     public void resize(int width, int height) {
-        stage.getViewport().update(width, height, true); // Update the stage viewport on resize
+        stage.getViewport().update(width, height, true);
     }
 
     @Override

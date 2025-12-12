@@ -51,7 +51,7 @@ public class MazeRunnerGame extends Game {
         // Background sound
         Music backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("background.mp3"));
         backgroundMusic.setLooping(true);
-        backgroundMusic.play();
+        //backgroundMusic.play();
 
         goToMenu(); // Navigate to the menu screen
     }
@@ -67,11 +67,27 @@ public class MazeRunnerGame extends Game {
         }
     }
 
+    public void goToSettings() {
+        this.setScreen(new SettingsScreen(this)); // Set the current screen to MenuScreen
+        if (gameScreen != null) {
+            gameScreen.dispose(); // Dispose the game screen if it exists
+            gameScreen = null;
+        }
+    }
+
     /**
      * Switches to the game screen.
      */
     public void goToGame() {
-        this.setScreen(new GameScreen(this)); // Set the current screen to GameScreen
+        this.setScreen(new GameScreen2(this, "assets/map/map1.properties")); // Set the current screen to GameScreen
+        if (menuScreen != null) {
+            menuScreen.dispose(); // Dispose the menu screen if it exists
+            menuScreen = null;
+        }
+    }
+
+    public void goToEndlessGame() {
+        this.setScreen(new GameScreen2(this)); // Set the current screen to GameScreen
         if (menuScreen != null) {
             menuScreen.dispose(); // Dispose the menu screen if it exists
             menuScreen = null;
@@ -82,7 +98,7 @@ public class MazeRunnerGame extends Game {
      * Loads the character animation from the character.png file.
      */
     private void loadCharacterAnimation() {
-        Texture walkSheet = new Texture(Gdx.files.internal("character.png"));
+        Texture walkSheet = new Texture(Gdx.files.internal("premade-textures/character.png"));
 
         int frameWidth = 16;
         int frameHeight = 32;
