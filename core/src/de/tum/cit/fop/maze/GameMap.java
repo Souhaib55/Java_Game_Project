@@ -97,6 +97,10 @@ public class GameMap {
     }
 
     public Integer getTile(int x, int y) {
+        //treat out of bounds as wall tile
+        if(x < 0 || x >= w || y < 0 || y >= h) {
+            return 0;
+        }
         return tiles.get(x + "," + y);
     }
 
@@ -109,7 +113,7 @@ public class GameMap {
         int t = GameObj.TILE;
 
         // shrink hitbox slightly
-        float margin = 0.05f * t;
+        float margin = 0.1f * t;
         Rectangle hitbox = new Rectangle(
                 r.x + margin,
                 r.y + margin,
@@ -117,13 +121,18 @@ public class GameMap {
                 r.height - 2 * margin
         );
 
-        int minTX = Math.max(0, (int) Math.floor(hitbox.x / t));
+        int minTX = (int) Math.floor(hitbox.x / t);
         int maxTX = (int) Math.ceil((hitbox.x + hitbox.width) / t);
-        int minTY = Math.max(0, (int) Math.floor(hitbox.y / t));
+        int minTY = (int) Math.floor(hitbox.y / t);
         int maxTY = (int) Math.ceil((hitbox.y + hitbox.height) / t);
 
-        for(int x = minTX; x <= maxTX; x++) {
-            for(int y = minTY; y <= maxTY; y++) {
+        //check if any part of the hitbox is outside of map boundaries
+        if(minTX < 0 || maxTX >= w || minTY < 0 || maxTY >= h) {
+            return true;
+        }
+
+        for(int x = minTX; x <= Math.min(w - 1, maxTX); x++) {
+            for(int y = minTY; y <= Math.min(h - 1, maxTY); y++) {
                 if(this.isWall(x, y)) {
                     Rectangle wallRect = new Rectangle(x * t, y * t, t, t);
                     if(hitbox.overlaps(wallRect)) return true;
@@ -138,7 +147,7 @@ public class GameMap {
         int n = 20, key = 0, trap = 0, enemy = 0, power = 0;
         isEndless = true;
 
-        FileHandle file = Gdx.files.local("map/endless.properties");
+        FileHandle file = Gdx.files.local("maps/endless.properties");
         if(file.exists()) {
             file.delete();
         }
@@ -197,7 +206,7 @@ public class GameMap {
         bw.write(sb.toString());
         bw.close();
 
-        load("map/endless.properties");
+        load("maps/endless.properties");
     }
 
     public boolean isEndless() {

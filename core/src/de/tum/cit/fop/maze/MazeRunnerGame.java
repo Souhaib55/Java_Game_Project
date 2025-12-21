@@ -3,6 +3,7 @@ package de.tum.cit.fop.maze;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -10,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.utils.Array;
 import games.spooky.gdx.nativefilechooser.NativeFileChooser;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserCallback;
+import games.spooky.gdx.nativefilechooser.NativeFileChooserConfiguration;
 
 /**
  * The MazeRunnerGame class represents the core of the Maze Runner game.
@@ -29,6 +32,8 @@ public class MazeRunnerGame extends Game {
     // Character animation downwards
     private Animation<TextureRegion> characterDownAnimation;
 
+    private final NativeFileChooser fileChooser;
+
     /**
      * Constructor for MazeRunnerGame.
      *
@@ -36,6 +41,7 @@ public class MazeRunnerGame extends Game {
      */
     public MazeRunnerGame(NativeFileChooser fileChooser) {
         super();
+        this.fileChooser = fileChooser;
     }
 
     /**
@@ -79,11 +85,26 @@ public class MazeRunnerGame extends Game {
      * Switches to the game screen.
      */
     public void goToGame() {
-        this.setScreen(new GameScreen2(this, "assets/map/map1.properties")); // Set the current screen to GameScreen
-        if (menuScreen != null) {
-            menuScreen.dispose(); // Dispose the menu screen if it exists
-            menuScreen = null;
-        }
+        NativeFileChooserConfiguration nfconf = new NativeFileChooserConfiguration();
+        nfconf.title = "Select Map File";
+        nfconf.directory = Gdx.files.absolute("maps/");
+        fileChooser.chooseFile(nfconf, new NativeFileChooserCallback() {
+            @Override
+            public void onFileChosen(FileHandle file) {
+                MazeRunnerGame.this.setScreen(new GameScreen2(MazeRunnerGame.this, file.path())); // Set the current screen to GameScreen
+                if (menuScreen != null) {
+                    menuScreen.dispose(); // Dispose the menu screen if it exists
+                    menuScreen = null;
+                }
+            }
+            @Override
+            public void onCancellation() {
+            }
+            @Override
+            public void onError(Exception e) {
+                System.err.println(e.getMessage());
+            }
+        });
     }
 
     public void goToEndlessGame() {
