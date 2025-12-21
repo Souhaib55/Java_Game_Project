@@ -2,9 +2,12 @@ package de.tum.cit.fop.maze;
 
 import com.badlogic.gdx.*;
 import com.badlogic.gdx.graphics.*;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.utils.viewport.*;
 import de.tum.cit.fop.maze.objects.*;
 import de.tum.cit.fop.maze.objects.enemies.*;
@@ -14,7 +17,6 @@ import de.tum.cit.fop.maze.objects.traps.*;
 import java.io.IOException;
 import java.util.Iterator;
 
-//TODO: rewrite the hud and pause/gameover/victory menu so that it uses scene2d
 public class GameScreen2 implements Screen {
     private final MazeRunnerGame game;
     // two cameras and viewports because hud stays fixed and player moves
@@ -23,13 +25,17 @@ public class GameScreen2 implements Screen {
     private final GameMap map;
     private final Player player;
     private boolean paused = false, gameOver = false, victory = false;
-    private int pi = 0;
 
     private float score = 0, time = 120; // 120 seconds to finish
 
     private final KeyBindings binds = KeyBindings.load();
 
     private final ShapeRenderer sr = new ShapeRenderer();
+
+    private Stage pauseStage, gameOverStage, victoryStage;
+    private Table pauseTable, gameOverTable, victoryTable;
+    private Image pauseBg, gameOverBg, victoryBg;
+    private Label gameOverScore, victoryScore;
 
     public GameScreen2(MazeRunnerGame game, String path) {
         this.game = game;
@@ -45,6 +51,10 @@ public class GameScreen2 implements Screen {
         map.load(path);
 
         player = new Player(map.getEx() * GameObj.TILE, map.getEy() * GameObj.TILE);
+
+        initPauseMenu();
+        initGameOverMenu();
+        initVictoryMenu();
     }
 
     public GameScreen2(MazeRunnerGame game) {
@@ -65,6 +75,10 @@ public class GameScreen2 implements Screen {
         }
 
         player = new Player(map.getEx() * GameObj.TILE, map.getEy() * GameObj.TILE);
+
+        initPauseMenu();
+        initGameOverMenu();
+        initVictoryMenu();
     }
 
     @Override
@@ -75,7 +89,7 @@ public class GameScreen2 implements Screen {
         globalInput();
 
         if(!paused && !gameOver && !victory) {
-            time -= 0.016f;
+            time -= delta;
 
             player.update(delta);
             playerInput(delta);
@@ -83,13 +97,19 @@ public class GameScreen2 implements Screen {
             // update enemies
             for(Enemy e : map.getEnemies()) {
                 e.update(delta, player, map);
-                if(!player.isAlive()) gameOver = true;
+                if(!player.isAlive()) {
+                    gameOver = true;
+                    updateGameOverScore();
+                }
             }
 
             // update traps
             for(Trap t : map.getTraps()) {
                 t.update(player, delta);
-                if(!player.isAlive()) gameOver = true;
+                if(!player.isAlive()) {
+                    gameOver = true;
+                    updateGameOverScore();
+                }
             }
 
             // check keys
@@ -117,6 +137,7 @@ public class GameScreen2 implements Screen {
             if(e != null) {
                 if(player.getBounds().overlaps(e.getBounds()) && player.getKeys() > 0) {
                     victory = true;
+                    updateVictoryScore();
                 }
             }
 
@@ -125,6 +146,7 @@ public class GameScreen2 implements Screen {
 
         if(time <= 0) {
             gameOver = true;
+            updateGameOverScore();
         }
 
         // draw map and entities
@@ -152,94 +174,200 @@ public class GameScreen2 implements Screen {
         }
         game.getSpriteBatch().end();
 
-        // pause menu
+        //update & render stages
         if(paused && !gameOver && !victory) {
-            drawDim();
-            String[] pause = {"Continue", "New Map", "New Endless", "Main Menu"};
-            if(Gdx.input.isKeyJustPressed(Input.Keys.UP)) pi = (pi - 1 + pause.length) % pause.length;
-            if(Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) pi = (pi + 1) % pause.length;
-            if(Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-                switch(pi) {
-                    case 0 -> paused = false;
-                    case 1 -> game.setScreen(new GameScreen2(game, "assets/map/map1.properties"));
-                    case 2 -> game.setScreen(new GameScreen2(game));
-                    case 3 -> game.setScreen(new MenuScreen(game));
-                }
-            }
-
-            game.getSpriteBatch().begin();
-            GlyphLayout tl = new GlyphLayout(game.getSkin().getFont("font"), "PAUSED");
-            float tx = hudVp.getWorldWidth() / 2 - tl.width / 2;
-            float ty = hudVp.getWorldHeight() - 200;
-            float cx = hudVp.getWorldWidth() / 2f;
-            game.getSkin().getFont("font").draw(game.getSpriteBatch(), tl, tx, ty);
-
-            for(int idx = 0; idx < pause.length; idx++) {
-                if(idx == pi) {
-                    game.getSkin().getFont("font").setColor(Color.YELLOW); // yellow for selection
-                } else {
-                    game.getSkin().getFont("font").setColor(Color.WHITE); // white otherwise
-                }
-                GlyphLayout l = new GlyphLayout(game.getSkin().getFont("font"), pause[idx]);
-                game.getSkin().getFont("font").draw(game.getSpriteBatch(), l, cx - l.width / 2, ty - 150 - idx * 35);
-            }
-            game.getSkin().getFont("font").setColor(Color.WHITE);
-            game.getSpriteBatch().end();
+            pauseBg.setVisible(true);
+            pauseTable.setVisible(true);
+            pauseStage.act(delta);
+            pauseStage.draw();
         } else if(gameOver) {
-            drawDim();
-            // game over screen
-            game.getSpriteBatch().begin();
-            GlyphLayout tl = new GlyphLayout(game.getSkin().getFont("font"), "YOU DIED!");
-            float tx = hudVp.getWorldWidth() / 2 - tl.width / 2;
-            float ty = hudVp.getWorldHeight() - 200;
-            game.getSkin().getFont("font").draw(game.getSpriteBatch(), tl, tx, ty);
-
-            float cx = hudVp.getWorldWidth() / 2f;
-            String[] v = new String[]{"Final score: " + (int) (score + time), "Press M to return to menu",
-                    map.isEndless() ? "Press N to generate new map" : ""};
-            for(int i = 0; i < v.length; i++) {
-                GlyphLayout l = new GlyphLayout(game.getSkin().getFont("font"), v[i]);
-                game.getSkin().getFont("font").draw(game.getSpriteBatch(), l, cx - l.width / 2, ty - 150 - i * 35);
-            }
-            game.getSpriteBatch().end();
+            gameOverBg.setVisible(true);
+            gameOverTable.setVisible(true);
+            gameOverStage.act(delta);
+            gameOverStage.draw();
         } else if(victory) {
-            drawDim();
-            // victory screen
-            game.getSpriteBatch().begin();
-            GlyphLayout tl = new GlyphLayout(game.getSkin().getFont("font"), "YOU WON!");
-            float tx = hudVp.getWorldWidth() / 2 - tl.width / 2;
-            float ty = hudVp.getWorldHeight() - 200;
-            game.getSkin().getFont("font").draw(game.getSpriteBatch(), tl, tx, ty);
-
-            float cx = hudVp.getWorldWidth() / 2f;
-            String[] v = new String[]{"Final score: " + (int) (score + time), "Press M to return to menu",
-                    map.isEndless() ? "Press N to generate new map" : ""};
-            for(int i = 0; i < v.length; i++) {
-                GlyphLayout l = new GlyphLayout(game.getSkin().getFont("font"), v[i]);
-                game.getSkin().getFont("font").draw(game.getSpriteBatch(), l, cx - l.width / 2, ty - 150 - i * 35);
-            }
-
-            game.getSkin().getFont("font").setColor(Color.WHITE);
-            game.getSpriteBatch().end();
+            victoryBg.setVisible(true);
+            victoryTable.setVisible(true);
+            victoryStage.act(delta);
+            victoryStage.draw();
+        } else {
+            // Hide all backgrounds when no menu is active
+            pauseBg.setVisible(false);
+            pauseTable.setVisible(false);
+            gameOverBg.setVisible(false);
+            gameOverTable.setVisible(false);
+            victoryBg.setVisible(false);
+            victoryTable.setVisible(false);
         }
+    }
+
+    //TODO: make code below less repetitive (make helper methods)
+    private void initPauseMenu() {
+        pauseStage = new Stage(new ScreenViewport(), game.getSpriteBatch());
+
+        pauseBg = new Image(new Texture(Gdx.files.internal("white.png")));
+        pauseBg.setColor(0, 0, 0, 0.5f);
+        pauseBg.setFillParent(true);
+        pauseBg.setVisible(false);
+
+        pauseTable = new Table();
+        pauseTable.setFillParent(true);
+        pauseTable.setVisible(false);
+
+        Label title = new Label("PAUSED", game.getSkin(), "title");
+        pauseTable.add(title).padBottom(80).row();
+
+        String[] menuItems = {"Continue", "New Map", "New Endless", "Main Menu"};
+        for(String item : menuItems) {
+            TextButton button = new TextButton(item, game.getSkin());
+            pauseTable.add(button).width(320).padBottom(20).row();
+
+            button.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    handlePauseMenuSelection(item);
+                }
+            });
+        }
+
+        pauseStage.addActor(pauseBg);
+        pauseStage.addActor(pauseTable);
+    }
+
+    private void initGameOverMenu() {
+        gameOverStage = new Stage(new ScreenViewport(), game.getSpriteBatch());
+
+        gameOverBg = new Image(new Texture(Gdx.files.internal("white.png")));
+        gameOverBg.setColor(0, 0, 0, 0.5f);
+        gameOverBg.setFillParent(true);
+        gameOverBg.setVisible(false);
+
+        gameOverTable = new Table();
+        gameOverTable.setFillParent(true);
+        gameOverTable.setVisible(false);
+
+        Label title = new Label("YOU DIED!", game.getSkin(), "title");
+        gameOverTable.add(title).padBottom(80).row();
+
+        gameOverScore = new Label("", game.getSkin());
+        gameOverTable.add(gameOverScore).padBottom(20).row();
+
+        TextButton menuButton = new TextButton("Main Menu", game.getSkin());
+        gameOverTable.add(menuButton).width(320).padBottom(20).row();
+
+        menuButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MenuScreen(game));
+            }
+        });
+
+        if(map.isEndless()) {
+            TextButton newMapButton = new TextButton("Generate New Map", game.getSkin());
+            gameOverTable.add(newMapButton).width(320).padBottom(20).row();
+
+            newMapButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.setScreen(new GameScreen2(game));
+                }
+            });
+        }
+
+        gameOverStage.addActor(gameOverBg);
+        gameOverStage.addActor(gameOverTable);
+    }
+
+    private void initVictoryMenu() {
+        victoryStage = new Stage(new ScreenViewport(), game.getSpriteBatch());
+
+        victoryBg = new Image(new Texture(Gdx.files.internal("white.png")));
+        victoryBg.setColor(0, 0, 0, 0.5f);
+        victoryBg.setFillParent(true);
+        victoryBg.setVisible(false);
+
+        victoryTable = new Table();
+        victoryTable.setFillParent(true);
+        victoryTable.setVisible(false);
+
+        Label title = new Label("YOU WON!", game.getSkin(), "title");
+        victoryTable.add(title).padBottom(80).row();
+
+        victoryScore = new Label("", game.getSkin());
+        victoryTable.add(victoryScore).padBottom(20).row();
+
+        TextButton menuButton = new TextButton("Main Menu", game.getSkin());
+        victoryTable.add(menuButton).width(320).padBottom(20).row();
+
+        menuButton.addListener(new ChangeListener() {
+            @Override
+            public void changed(ChangeEvent event, Actor actor) {
+                game.setScreen(new MenuScreen(game));
+            }
+        });
+
+        if(map.isEndless()) {
+            TextButton newMapButton = new TextButton("Generate New Map", game.getSkin());
+            victoryTable.add(newMapButton).width(320).padBottom(20).row();
+
+            newMapButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.setScreen(new GameScreen2(game));
+                }
+            });
+        }
+
+        victoryStage.addActor(victoryBg);
+        victoryStage.addActor(victoryTable);
+    }
+
+    private void handlePauseMenuSelection(String item) {
+        switch(item) {
+            case "Continue":
+                paused = false;
+                Gdx.input.setInputProcessor(null);
+                break;
+            case "New Map":
+                game.setScreen(new GameScreen2(game, "assets/map/map1.properties"));
+                break;
+            case "New Endless":
+                game.setScreen(new GameScreen2(game));
+                break;
+            case "Main Menu":
+                game.setScreen(new MenuScreen(game));
+                break;
+        }
+    }
+
+    private void updateGameOverScore() {
+        gameOverScore.setText("Final score: " + (int) (score + time));
+    }
+
+    private void updateVictoryScore() {
+        victoryScore.setText("Final score: " + (int) (score + time));
     }
 
     private void globalInput() {
         // toggle pause
         if(!gameOver && !victory && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             paused = !paused;
+            if(paused) {
+                Gdx.input.setInputProcessor(pauseStage);
+            } else {
+                Gdx.input.setInputProcessor(null);
+            }
         }
 
-        // return to menu
-        if((gameOver || victory) && Gdx.input.isKeyJustPressed(Input.Keys.M)) {
-            game.setScreen(new MenuScreen(game));
-        }
-        if((gameOver || victory) && map.isEndless() && Gdx.input.isKeyJustPressed(Input.Keys.N)) {
-            game.setScreen(new GameScreen(game));
+        //set input processor for game over/victory screens
+        if(gameOver && Gdx.input.getInputProcessor() != gameOverStage) {
+            Gdx.input.setInputProcessor(gameOverStage);
+        } else if(victory && Gdx.input.getInputProcessor() != victoryStage) {
+            Gdx.input.setInputProcessor(victoryStage);
         }
 
-        // camera zoom
-        if(!paused) {
+        // camera zoom (only when not in any menu)
+        if(!paused && !gameOver && !victory) {
             if(Gdx.input.isKeyPressed(Input.Keys.PLUS) || Gdx.input.isKeyPressed(Input.Keys.EQUALS))
                 camera.zoom = Math.max(0.5f, camera.zoom - 0.02f);
             if(Gdx.input.isKeyPressed(Input.Keys.MINUS)) camera.zoom = Math.min(2.0f, camera.zoom + 0.02f);
@@ -303,15 +431,6 @@ public class GameScreen2 implements Screen {
         return "\\^";
     }
 
-    private void drawDim() {
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        sr.setProjectionMatrix(camera.combined);
-        sr.begin(ShapeRenderer.ShapeType.Filled);
-        sr.setColor(0, 0, 0, 0.5f);
-        sr.rect(camera.position.x - camera.viewportWidth * camera.zoom / 2, camera.position.y - camera.viewportHeight * camera.zoom / 2, camera.viewportWidth * camera.zoom, camera.viewportHeight * camera.zoom);
-        sr.end();
-    }
-
     @Override
     public void show() {
     }
@@ -321,6 +440,9 @@ public class GameScreen2 implements Screen {
         camera.setToOrtho(false, width, height);
         viewport.update(width, height);
         hudVp.update(width, height, true);
+        pauseStage.getViewport().update(width, height, true);
+        gameOverStage.getViewport().update(width, height, true);
+        victoryStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -339,5 +461,9 @@ public class GameScreen2 implements Screen {
 
     @Override
     public void dispose() {
+        sr.dispose();
+        pauseStage.dispose();
+        gameOverStage.dispose();
+        victoryStage.dispose();
     }
 }

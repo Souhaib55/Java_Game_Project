@@ -14,7 +14,7 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 /**
- * MenuScreen implemented with Scene2D UI but using the Pathcoders menu items.
+ * MenuScreen implemented with Scene2D UI.
  */
 public class MenuScreen implements Screen {
 
@@ -27,7 +27,6 @@ public class MenuScreen implements Screen {
      */
     public MenuScreen(MazeRunnerGame game) {
         var camera = new OrthographicCamera();
-        camera.zoom = 1.5f;
 
         Viewport viewport = new ScreenViewport(camera);
         stage = new Stage(viewport, game.getSpriteBatch());
@@ -36,7 +35,6 @@ public class MenuScreen implements Screen {
         table.setFillParent(true);
         stage.addActor(table);
 
-        // Title label
         Label title = new Label("AWESOME GAME", game.getSkin(), "title");
         table.add(title).padBottom(80).row();
 

@@ -38,15 +38,14 @@ public class SettingsScreen implements Screen {
     public SettingsScreen(MazeRunnerGame game) {
         this.game = game;
         var camera = new OrthographicCamera();
-        camera.zoom = 1.5f;
         stage = new Stage(new ScreenViewport(camera), game.getSpriteBatch());
 
         Table table = new Table();
         table.setFillParent(true);
         stage.addActor(table);
 
-        Label title = new Label("SETTINGS", game.getSkin(), "title");
-        table.add(title).padBottom(80).row();
+        // Label title = new Label("SETTINGS", game.getSkin(), "title");
+        // table.add(title).padBottom(-80).row();
 
         buttons = new TextButton[items.length];
         for(int idx = 0; idx < items.length; idx++) {
