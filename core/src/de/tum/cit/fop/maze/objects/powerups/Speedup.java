@@ -6,7 +6,7 @@ import de.tum.cit.fop.maze.objects.Player;
 public class Speedup extends Powerup {
 
     public Speedup(float x, float y) {
-        super(x, y, "assets/speedup.png");
+        super(x, y, "speedup.png");
     }
 
     @Override

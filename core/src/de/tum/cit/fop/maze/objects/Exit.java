@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Exit extends GameObj {
     public Exit(int x, int y) {
-        super(x, y, "assets/exit.png");
+        super(x, y, "exit.png");
     }
 
     @Override

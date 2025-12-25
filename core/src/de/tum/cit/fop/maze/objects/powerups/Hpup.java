@@ -4,7 +4,7 @@ import de.tum.cit.fop.maze.objects.Player;
 
 public class Hpup extends Powerup {
     public Hpup(float x, float y) {
-        super(x, y, "assets/exit.png");
+        super(x, y, "exit.png");
     }
 
     @Override

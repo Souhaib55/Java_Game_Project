@@ -8,7 +8,7 @@ public class DamageTrap extends Trap {
     private boolean active = false;
 
     public DamageTrap(int x, int y, float interval) {
-        super(x, y, "assets/trap.png");
+        super(x, y, "trap.png");
         this.interval = interval;
     }
 

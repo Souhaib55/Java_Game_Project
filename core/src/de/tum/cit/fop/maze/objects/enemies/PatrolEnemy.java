@@ -9,7 +9,7 @@ public class PatrolEnemy extends Enemy {
     private float dir = 1; //direction of movement 1 for going right/up, -1 for going left/down
 
     public PatrolEnemy(int x, int y, boolean axis) {
-        super(x, y, "assets/player.png");
+        super(x, y, "player.png");
         this.axis = axis;
         this.speed = 150;
     }

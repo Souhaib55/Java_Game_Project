@@ -9,7 +9,7 @@ public class ChaserEnemy extends Enemy {
     private float dx = 0, dy = 0, cd = 0; //direction to x, y, and change of direction respectively
 
     public ChaserEnemy(int x, int y) {
-        super(x, y, "assets/player.png");
+        super(x, y, "player.png");
     }
 
     @Override

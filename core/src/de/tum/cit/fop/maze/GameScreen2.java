@@ -27,6 +27,7 @@ public class GameScreen2 implements Screen {
     private boolean paused = false, gameOver = false, victory = false;
 
     private float score = 0, time = 120; // 120 seconds to finish
+    private int currentLevel = 0; // 0 for endless, 1-5 for levels
 
     private final KeyBindings binds = KeyBindings.load();
 
@@ -39,6 +40,18 @@ public class GameScreen2 implements Screen {
 
     public GameScreen2(MazeRunnerGame game, String path) {
         this.game = game;
+
+        // Extract level number from path (e.g., "maps/level-3.properties" -> 3)
+        if (path.contains("level-")) {
+            try {
+                String levelStr = path.substring(path.indexOf("level-") + 6, path.indexOf(".properties"));
+                currentLevel = Integer.parseInt(levelStr);
+            } catch (Exception e) {
+                currentLevel = 1;
+            }
+        } else {
+            currentLevel = 0; // endless mode
+        }
 
         camera = new OrthographicCamera();
         viewport = new ExtendViewport(1024, 768, camera);
@@ -295,6 +308,19 @@ public class GameScreen2 implements Screen {
 
         victoryScore = new Label("", game.getSkin());
         victoryTable.add(victoryScore).padBottom(20).row();
+
+        // Add Next Level button for levels 1-4
+        if(currentLevel > 0 && currentLevel < 5) {
+            TextButton nextLevelButton = new TextButton("Next Level", game.getSkin());
+            victoryTable.add(nextLevelButton).width(320).padBottom(20).row();
+
+            nextLevelButton.addListener(new ChangeListener() {
+                @Override
+                public void changed(ChangeEvent event, Actor actor) {
+                    game.goToLevel(currentLevel + 1);
+                }
+            });
+        }
 
         TextButton menuButton = new TextButton("Main Menu", game.getSkin());
         victoryTable.add(menuButton).width(320).padBottom(20).row();

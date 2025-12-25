@@ -7,7 +7,7 @@ public class SludgeTrap extends Trap {
     private final float mult;
 
     public SludgeTrap(int x, int y, float mult) {
-        super(x, y, "assets/key.png");
+        super(x, y, "key.png");
         this.mult = mult;
     }
 

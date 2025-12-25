@@ -57,7 +57,7 @@ public class MazeRunnerGame extends Game {
         // Background sound
         Music backgroundMusic = Gdx.audio.newMusic(Gdx.files.internal("background.mp3"));
         backgroundMusic.setLooping(true);
-        //backgroundMusic.play();
+        backgroundMusic.play();
 
         goToMenu(); // Navigate to the menu screen
     }
@@ -85,32 +85,27 @@ public class MazeRunnerGame extends Game {
      * Switches to the game screen.
      */
     public void goToGame() {
-        NativeFileChooserConfiguration nfconf = new NativeFileChooserConfiguration();
-        nfconf.title = "Select Map File";
-        nfconf.directory = Gdx.files.absolute("maps/");
-        fileChooser.chooseFile(nfconf, new NativeFileChooserCallback() {
-            @Override
-            public void onFileChosen(FileHandle file) {
-                MazeRunnerGame.this.setScreen(new GameScreen2(MazeRunnerGame.this, file.path())); // Set the current screen to GameScreen
-                if (menuScreen != null) {
-                    menuScreen.dispose(); // Dispose the menu screen if it exists
-                    menuScreen = null;
-                }
-            }
-            @Override
-            public void onCancellation() {
-            }
-            @Override
-            public void onError(Exception e) {
-                System.err.println(e.getMessage());
-            }
-        });
+        // Load level-1 directly
+        this.setScreen(new GameScreen2(this, "maps/level-1.properties"));
+        if (menuScreen != null) {
+            menuScreen.dispose();
+            menuScreen = null;
+        }
     }
 
     public void goToEndlessGame() {
         this.setScreen(new GameScreen2(this)); // Set the current screen to GameScreen
         if (menuScreen != null) {
             menuScreen.dispose(); // Dispose the menu screen if it exists
+            menuScreen = null;
+        }
+    }
+
+    public void goToLevel(int levelNumber) {
+        String levelPath = "maps/level-" + levelNumber + ".properties";
+        this.setScreen(new GameScreen2(this, levelPath));
+        if (menuScreen != null) {
+            menuScreen.dispose();
             menuScreen = null;
         }
     }

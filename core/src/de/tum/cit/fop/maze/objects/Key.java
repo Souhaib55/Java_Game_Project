@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.Rectangle;
 
 public class Key extends GameObj {
     public Key(int x, int y) {
-        super(x, y, "assets/key.png");
+        super(x, y, "key.png");
     }
 
     @Override

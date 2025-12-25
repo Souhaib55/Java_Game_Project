@@ -19,7 +19,7 @@ public class Player extends GameObj {
     private TextureRegion current;
 
     public Player(float x, float y) {
-        super(x, y, "assets/player.png");
+        super(x, y, "player.png");
         this.w = TILE;
         this.h = TILE;
 

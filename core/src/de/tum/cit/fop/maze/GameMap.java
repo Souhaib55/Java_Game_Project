@@ -18,9 +18,9 @@ public class GameMap {
     private int w, h;
     private final Map<String, Integer> tiles = new HashMap<>();
     private int ex, ey;
-    private final Texture wall = new Texture("assets/wall.png"),
-            entry = new Texture("assets/entry.png"),
-            floor = new Texture("assets/entry.png");
+    private final Texture wall = new Texture("wall.png"),
+            entry = new Texture("entry.png"),
+            floor = new Texture("entry.png");
     private final List<Trap> traps = new ArrayList<>();
     private final List<Key> keys = new ArrayList<>();
     private final List<Enemy> enemies = new ArrayList<>();
@@ -30,6 +30,11 @@ public class GameMap {
     private boolean isEndless = false;
 
     public void load(String path) {
+        // Check if loading endless mode
+        if(path.contains("endless")) {
+            isEndless = true;
+        }
+        
         Properties p = new Properties();
         try(BufferedReader r = new BufferedReader(Gdx.files.internal(path).reader())) {
             p.load(r);
@@ -39,6 +44,11 @@ public class GameMap {
 
         int maxX = 0, maxY = 0;
         for(String key : p.stringPropertyNames()) {
+            // Skip non-coordinate properties like "Width", "Height", etc.
+            if (!key.contains(",")) {
+                continue;
+            }
+            
             int val = Integer.parseInt(p.getProperty(key).trim());
             tiles.put(key, val);
 
@@ -169,39 +179,41 @@ public class GameMap {
 
         for(int i = 2; i < n - 2; i++) {
             for(int j = 2; j < n - 2; j++) {
-                int what = (int) (Math.random() * 7);
-                switch(what) {
-                    case 3:
-                        if(trap < 5) {
-                            sb.append(i).append(",").append(j).append("=").append(what).append("\n");
-                            trap++;
-                        }
-                        break;  // ← prevents fall-through
-                    case 4:
-                        if(enemy < 5 && (i > 3 && j > 3)) {
-                            sb.append(i).append(",").append(j).append("=").append(what).append("\n");
-                            enemy++;
-                        }
-                        break;
-                    case 5:
-                        if(key < 3) {
-                            sb.append(i).append(",").append(j).append("=").append(what).append("\n");
-                            key++;
-                        }
-                        break;
-                    case 6:
-                        if(power < 5) {
-                            sb.append(i).append(",").append(j).append("=").append(what).append("\n");
-                            power++;
-                        }
-                        break;
-                    default:
-                        if(Math.round(Math.random()) > 0 && !(what == 1 || what == 2)) {
-                            sb.append(i).append(",").append(j).append("=").append(what).append("\n");
-                        }
-                        break;
+                int what = (int) (Math.random() * 10);
+                
+                // 0 = wall, appears with 20% probability
+                if(what == 0 && Math.random() < 0.2) {
+                    sb.append(i).append(",").append(j).append("=0\n");
                 }
+                // 3 = trap
+                else if(what == 3 && trap < 5) {
+                    sb.append(i).append(",").append(j).append("=3\n");
+                    trap++;
+                }
+                // 4 = enemy
+                else if(what == 4 && enemy < 5 && (i > 3 && j > 3)) {
+                    sb.append(i).append(",").append(j).append("=4\n");
+                    enemy++;
+                }
+                // 5 = key
+                else if(what == 5 && key < 2) {
+                    sb.append(i).append(",").append(j).append("=5\n");
+                    key++;
+                }
+                // 6 = powerup
+                else if(what == 6 && power < 5) {
+                    sb.append(i).append(",").append(j).append("=6\n");
+                    power++;
+                }
+                // else: leave as path (no entry in properties file)
             }
+        }
+        
+        // Ensure at least one key exists
+        if(key == 0) {
+            int kx = 3 + (int)(Math.random() * (n - 6));
+            int ky = 3 + (int)(Math.random() * (n - 6));
+            sb.append(kx).append(",").append(ky).append("=5\n");
         }
         bw.write(sb.toString());
         bw.close();
